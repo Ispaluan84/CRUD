@@ -1,5 +1,6 @@
 const express = require('express');
 const app = express();
+const port = 3000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true}));
@@ -24,49 +25,72 @@ app.get('/', (req, res) => {
 })
 
 app.get('/usuarios', (req, res) => {
-        res.send(`
-            <h1>Luchadores Street Figther</h1>
-            <ul>
-                ${usuarios.map((usuario) => `<li>ID: ${usuario.id} Nombre: ${usuario.nombre} Edad: ${usuario.edad} Procedencia: ${usuario.lugarProcedencia}</li>`).join('')}
-            </ul>
-            <form action="/usuarios" method="post">
-                <label for"nombre">Nombre:</label>
-                <input type="text" id="nombre" name="nombre" required>
-                <label for="edad">Edad:</label>
-                <input type="number" id="edad" name="edad" required>
-                <label for="procedencia">Procedencia:</label>
-                <input type="text" id="procedencia" name="procedencia" required>
-                <button type"submit">Añadir Luchador</button>
-            </form>
-        `);
+    res.json(Object.values(usuarios))
 });
 
 app.get('/usuarios/:nombre', (req, res) => {
-    const nombre = req.params.nombre;
-    const usuario = usuarios.find( us => us.nombre.toLowerCase() === nombre.toLowerCase())
+    const nombreBuscado = req.params.nombre.toLowerCase();
+    const encontrado = usuarios.find(us => us.nombre.toLowerCase() === nombreBuscado);
 
-    if(usuario) {
-        res.json(usuario)
+    if(encontrado) {
+        res.json(encontrado)
     } else {
-        res.status(404).json({mensaje: `Usuario ${nombre} no Encontrado`});
+        res.status(404).json({mensaje: 'Usuario no Encontrado'});
     }
 });
 
 app.post('/usuarios', (req, res) => {
-    const newFigther = {
-        id: usuarios.length + 1,
-        nombre: req.body.nombre,
-        edad: req.body.edad,
-        lugarProcedencia: req.body.lugarProcedencia
-    };
+    const {nombre} = req.body;
+    if(!nombre) {
+        return res.status(400).json({mensaje: 'Falta el campo "nombre"'})
+    }
 
-    usuarios.push(newFigther);
-    res.redirect('/usuarios')
-})
+    const existe = usuarios.find(us => us.nombre.toLowerCase() === nombre.toLowerCase());
+    if(existe) {
+        return res.status(400).json({mensaje: 'Ya existe un usuario con ese nombre'})
+    }
+
+    const id = Date.now();
+    const nuevoUsuario = { id, nombre };
+    elementos.push(nuevoUsuario);
+
+    res.status(201).json(nuevoUsuario);
+    })
+
+    app.put('/usuarios/:nombre', (req, res) => {
+        const usuarioOriginal = req.params.nombre.toLowerCase();
+        const nuevoNombre = req.body.nombre;
+
+        const index = usuarios.findIndex(us => us.nombre.toLowerCase() === usuarioOriginal);
+
+        if(index === -1) {
+            res.status(404).json({mensaje: 'Elemento no encontrado'})
+        }
+        if(!nuevoNombre) {
+            return res.status(400).json({mensaje: 'Falta el nuevo nombre'})
+        }
+
+        usuarios[index].nombre = nuevoNombre;
+        res.json({mensaje: 'Elemento Actualizado', Elemento: usuarios[index]})
+    })
+
+    app.delete('/usuarios/:nombre', (req, res) => {
+        const nombre = req.params.nombre.toLowerCase();
+        const index = usuarios.findIndex(us => us.nombre.toLowerCase() === nombre);
+      
+        if (index === -1) {
+          return res.status(404).json({ mensaje: "Usuario no encontrado para eliminar" });
+        }
+      
+        const eliminado = usuarios.splice(index, 1);
+        res.json({ mensaje: "Usuario eliminado", eliminado: eliminado[0] });
+      });
+      
 
 
 
 
-app.listen(3000, () => {
-    console.log('Servidor express escuchando en el puerto http://localhost:3000/usuarios')
+
+app.listen(port, () => {
+    console.log(`Servidor express escuchando en el puerto http://localhost:${port}/usuarios`)
 })
